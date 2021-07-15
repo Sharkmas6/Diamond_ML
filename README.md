@@ -1,3 +1,4 @@
 # Diamond_ML
 
-This is a test to use local repositories.
+Python scripts/apps for Diamond Light Source's Summer Placement.
+Researching optimal features for correct protein identification from electron density maps, obtained using EP.
