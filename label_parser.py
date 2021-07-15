@@ -42,20 +42,21 @@ class AiLabelParser(object):
       ''' % pdb_id)
         dataset_ids = [i[0] for i in self.cur.fetchall()]
 
-        # get cc_original and cc_inverse
+        # get cc_original, cc_inverse and acl
         self.cur.execute(f'''
-      SELECT SHELXE_CC_ORIGINAL, SHELXE_CC_INVERSE
+      SELECT SHELXE_CC_ORIGINAL, SHELXE_CC_INVERSE, SHELXE_ACL_ORIGINAL, SHELXE_ACL_INVERSE
       FROM EP_STATS WHERE DATASET_id IN ({','.join(['?']*len(dataset_ids))})
       ''', dataset_ids)
-        ccs = self.cur.fetchall()
+        ccs_acl = self.cur.fetchall()
 
         # check if algorithms were successful
         success = []
-        for cc_original, cc_inverse in ccs:
-            success += [abs(cc_original - cc_inverse) > 10 and max((cc_original, cc_inverse)) > 25]
+        for cc_original, cc_inverse, acl_original, acl_inverse in ccs_acl:
+            success += [abs(cc_original - cc_inverse) > 10 and max((cc_original, cc_inverse)) > 25\
+                        and max((acl_original, acl_inverse)) > 10]
 
         if success == []:
-            print('No EP data found')
+            print('No EP datum found')
 
             return False
 
@@ -94,10 +95,10 @@ class AiLabelParser(object):
             else:
                 self.found_no_ep_data += [pdb_code[0]]
 
-        print(f"Found EP data for {len(self.found_ep_data)} entities\n"
-              f"No EP data found for {len(self.found_no_ep_data)} entities")
+        print(f"Found EP datum for {len(self.found_ep_data)} entities\n"
+              f"No EP datum found for {len(self.found_no_ep_data)} entities")
 
 
-database_path = r"path/to/database"
+database_path = r"D:/Diamond/cesar_project.db"
 parser = AiLabelParser(database_path)
 parser.add_all_entries()
