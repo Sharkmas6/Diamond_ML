@@ -99,6 +99,6 @@ class AiLabelParser(object):
               f"No EP datum found for {len(self.found_no_ep_data)} entities")
 
 
-database_path = r"D:/Diamond/cesar_project.db"
+database_path = r"path/to/database"
 parser = AiLabelParser(database_path)
 parser.add_all_entries()

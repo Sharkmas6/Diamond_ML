@@ -33,11 +33,62 @@ def sql_to_df(db_file, *tb_names, search_query=None):
         yield df
 
 
+class Data:
+    '''
+    Class to hold feature/label data
+    '''
+    def __init__(self, data, targets, name=None):
+        try:
+            assert data.shape[0] == len(targets), "Data and targets should be of same size"
+        except AttributeError:  # case not a numpy or pandas structure, e.g. list or tuple
+            raise TypeError("This class only works with numpy/pandas data structures, "
+                            "please restructure your data into one of these and try again")
+
+        self.x = data
+        self.y = targets
+        self.union = pd.concat([self.x, self.y], axis=1)
+        self.name = name
+        self._dict = {"x": self.x, "y": self.y, "union": self.union}
+
+    def __getitem__(self, item):
+        return self._dict[item]
+
+    def __setitem__(self, key, value):
+        self._dict[key] = value
+
+    def __str__(self):
+        return f"{self.name} data with shape {self.x.shape} - {np.unique(self.y).size} categories"
+
+    def unpack(self, union=False, drop_col=None):
+        '''
+        Easy function to unpack data/features and targets/labels in a single statement.
+        Union of these also available.
+        :param union: Whether to include returning union or not
+        :param drop_col: Try dropping mentioned columns
+        :return: data, targets (and union if union=True) with "drop" columns dropped, if any
+        '''
+        x_final, y_final, union_final = self.x, self.y, self.union
+
+        # drop specified columns, if possible
+        if drop_col:
+            try:
+                x_final = x_final.drop(drop_col, axis=1)
+                union_final = union_final.drop(drop_col, axis=1)
+            except KeyError:
+                print("Unable to find columns intended to drop, resuming..")
+
+        # return x, y (and union if specified)
+        if union:
+            return x_final, y_final, union_final
+        else:
+            return x_final, y_final
+
+
 tables = [r"SWEEP_STATS", r"EP_STATS", r"PDB_DATA", r"DATASET_INFO"]
 query = r"SELECT * FROM #TB_NAME#"
 names = ["dials", "3dii"]
 db_paths = [fr"D:\Diamond\cesar_project_{name}.db" for name in names]  # locations on my machine
-data = {name: {} for name in names}
+data = {}
 
 for name, db_path in zip(names, db_paths):
 
@@ -89,13 +140,12 @@ for name, db_path in zip(names, db_paths):
     x = x[mask]
     x.drop(columns="WAVE_NAME", inplace=True)
 
-    # analyse features
-    union = pd.concat([x, y], axis=1)
+    # optimise dtypes to save memory
+    x["SPACEGROUP"] = x["SPACEGROUP"].astype("category")
+    y = y.astype("bool")
 
-    # add results to lists
-    data[name]["x"] = x
-    data[name]["y"] = y
-    data[name]["union"] = union
+    # add results to dict
+    data[name] = Data(x, y, name=name)
 
 
 def truncate_data(x=x, y=y, n=None):
