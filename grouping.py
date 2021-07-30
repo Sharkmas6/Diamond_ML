@@ -1,6 +1,6 @@
 from matplotlib.patches import Patch
 from sklearn.cluster import KMeans
-from read_data import Data, np, pd, plt
+from read_data import Data, pd, plt
 from collections import OrderedDict
 
 
