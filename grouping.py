@@ -1,6 +1,7 @@
 from matplotlib.patches import Patch
 from sklearn.cluster import KMeans
-from read_data import Data, pd, plt
+from sklearn.preprocessing import KBinsDiscretizer
+from read_data import Data, pd, np, plt
 from collections import OrderedDict
 
 
@@ -40,6 +41,7 @@ class GroupedData(Data):
 
     def group(self, n_groups, names=None):
         '''
+        General method to group data based on given array
         :param n_groups: int array/series stating which group each datapoint belongs to
         :param names: container specifying the names of each group
         :return: grouped self
@@ -98,6 +100,22 @@ class GroupedSpacegroup(GroupedData):
 
         return model, clusters, self
 
+
+class GroupedHighResolution(GroupedData):
+    '''
+    Class to hold feature/label data grouped by discrete high resolution limit categories
+    '''
+    def group(self, n_groups, names=None, encode="ordinal", strategy="uniform", auto_sort=True):
+        # separate data into n groups by high resolution limit
+        disc = KBinsDiscretizer(n_bins=n_groups, encode=encode, strategy=strategy)
+        cats = disc.fit_transform(self.x[["HIGH_RES_LIMIT"]]).flatten().astype(int)
+
+        # group data
+        groups = super(GroupedHighResolution, self).group(n_groups=cats, names=names)
+        if auto_sort:
+            groups.sort(np.unique(cats), inplace=True)
+
+        return self
 
 
 def cluster_spacegroups(union, n_clusters):
