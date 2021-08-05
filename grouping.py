@@ -22,6 +22,18 @@ class GroupedData(Data):
             new.groups = sorted_dict
             return new
 
+    def rename(self, name_dict):
+        '''
+        Method to rename group names to new names
+        :param name_dict: dictionary whose key:value pairs correspond to old_name:new_name pairs
+        :return: renamed self
+        '''
+
+        for old_name, new_name in name_dict.items():
+            self.groups = OrderedDict((new_name if name == old_name else name, grp) for name, grp in self.groups.items())
+
+        return self
+
     def __getitem__(self, item):
         assert item in self.groups, "Desired group not found"
         return self.groups[item]
@@ -115,7 +127,7 @@ class GroupedHighResolution(GroupedData):
         if auto_sort:
             groups.sort(np.unique(cats), inplace=True)
 
-        return self
+        return groups
 
 
 def cluster_spacegroups(union, n_clusters):
