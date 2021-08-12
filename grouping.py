@@ -130,7 +130,7 @@ class GroupedHighResolution(GroupedData):
         return groups
 
 
-def cluster_spacegroups(union, n_clusters):
+def cluster_spacegroups(union, n_clusters, sort_cluster_names=True):
     # group by success and sort
     agg_sorted = union.groupby("SPACEGROUP").agg(["mean", "sem"])\
         .sort_values(("IS_SUCCESS", "mean"), ascending=False)
@@ -139,6 +139,11 @@ def cluster_spacegroups(union, n_clusters):
     model = KMeans(n_clusters=n_clusters)
     pred = model.fit_predict(pd.DataFrame(agg_sorted["IS_SUCCESS", "mean"]))
     pred = pd.Series(pred, index=agg_sorted.index)
+
+    # sort cluster names if desired
+    if sort_cluster_names:
+        cluster_names_map = pd.Series(np.arange(n_clusters)[::-1], index=pred.unique())
+        pred = pred.map(cluster_names_map)
 
     return model, pred, agg_sorted
 
