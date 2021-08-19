@@ -87,7 +87,7 @@ class Data:
 tables = [r"SWEEP_STATS", r"EP_STATS", r"PDB_DATA", r"DATASET_INFO"]
 query = r"SELECT * FROM #TB_NAME#"
 names = ["dials", "3dii"]
-db_paths = [fr"/home/ynk78583/Documents/cesar_project_{name}.db" for name in names]  # locations on my machine
+db_paths = [fr"D:\Diamond\cesar_project_{name}.db" for name in names]  # locations on my machine
 data = {}
 
 for name, db_path in zip(names, db_paths):
@@ -133,10 +133,10 @@ for name, db_path in zip(names, db_paths):
         x[col] = x["DATASET_id"].map(dataset_full[col])
     # fix unrestricted (None) datasets
     x["DATASET_NAME"] = x["DATASET_NAME"].apply(lambda name: int(name[8:]))
-    low_none = (x["DATASET_NAME"] - 1) // 10 == 0  # first 11 values
+    '''low_none = (x["DATASET_NAME"] - 1) // 10 == 0  # first 11 values
     high_none = x["DATASET_NAME"] % 10 == 1
     for col, mask in zip(["RESOLUTION_LOW", "RESOLUTION_HIGH"], [low_none, high_none]):
-        x.loc[mask, col] = None
+        x.loc[mask, col] = None'''
 
     # limit to common datasets
     valid_ids = set.intersection(set(x["DATASET_id"]), set(ep["DATASET_id"]))
