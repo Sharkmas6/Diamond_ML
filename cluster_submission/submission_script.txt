@@ -1,0 +1,15 @@
+#!/bin/bash
+#$ -V
+#$ -w e
+#$ -j yes
+#$ -N classifier
+#$ -q low.q
+#$ -S /bin/bash
+#$ -wd /home/ynk78583/mx-scratch/analysis
+#$ -t 1-1 -tc 1
+#$ -o /home/ynk78583/mx-scratch/analysis/results/classifier_log.log
+
+
+export PATH=${PATH}:${SGE_O_PATH}
+
+python3 /home/ynk78583/mx-scratch/analysis/scripts/random_forest_parameter_search.py $SGE_TASK_ID
