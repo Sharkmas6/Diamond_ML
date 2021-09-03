@@ -52,8 +52,8 @@ class AiLabelParser(object):
         # check if algorithms were successful
         success = []
         for cc_original, cc_inverse, acl_original, acl_inverse in ccs_acl:
-            success += [abs(cc_original - cc_inverse) > 10 and max((cc_original, cc_inverse)) > 25\
-                        and max((acl_original, acl_inverse)) > 10]
+            success += [(abs(cc_original - cc_inverse) > 10) and
+                        ((cc_original > 25 and acl_original > 10) ^ (cc_inverse > 25 and acl_inverse > 10))]
 
         if success == []:
             print('No EP datum found')
