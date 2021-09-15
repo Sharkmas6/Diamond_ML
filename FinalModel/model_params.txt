@@ -1,0 +1,3 @@
+model_kind:MLP
+hidden_layer_sizes:(200, 100, 150)
+alpha:0.001

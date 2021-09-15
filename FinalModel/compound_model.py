@@ -38,7 +38,7 @@ class EPModel():
 
     def __init__(self, data_pipeline="dials", model_kind="MLP", feat_select_type="default", model_params={},
                  feat_select_params={"k": 7}, metrics=["accuracy", "f1", "mcc", "precision", "recall"],
-                 outlier_kind="LOF"):
+                 outlier_kind="LOF", default_contam=None):
         assert data_pipeline in self.pipeline_kinds_, "Model only available for DIALS and XDS (3DII)"
         assert model_kind in self.available_models_.keys(), f"Please select one of: {list(self.available_models_.keys())}"
 
@@ -51,7 +51,7 @@ class EPModel():
         # create column transformer depending on feat_selection kind
         if feat_select_type == "kbest":
             # select k best features
-            self.feat_selector = SelectKBest(**feat_select_params)
+            self.feat_selector = self.feat_selections_["KBest"](**feat_select_params)
             self.model.steps.insert(0, ("feat_select", self.feat_selector))
         elif feat_select_type == "default":
             # select predefined features
@@ -64,6 +64,13 @@ class EPModel():
         self.feat_select_type = feat_select_type
         self.metrics = metrics
         self.outlier = self.available_outliers_[outlier_kind]
+
+        # store default contamination
+        if default_contam is None:
+            # 40% for dials, 0% for XDS if default
+            self.default_contam = 0.4 if data_pipeline == "dials" else 0
+        else:
+            self.default_contam = default_contam
 
     def filter_outliers(self, X, y=None, contamination=0.4):
         if contamination <= 0 or contamination >= 1:
@@ -88,30 +95,33 @@ class EPModel():
         else:
             return X
 
-    def fit(self, X, y, outlier_contam=0.4, **fit_params):
+    def fit(self, X, y, outlier_contam=None, **fit_params):
         print(f"Fitting model on {X.shape[0]} samples, {X.shape[1]} features...")
         # filter dials data
-        X, y = self.filter_outliers(X, y, contamination=outlier_contam)
+        contamination = self.default_contam if outlier_contam is None else outlier_contam
+        X, y = self.filter_outliers(X, y, contamination=contamination)
 
         self.is_trained_ = True
         return self.model.fit(X, y, **fit_params)
 
-    def predict(self, X, confidence=0.5, outlier_contam=0.4, *args, **kwargs):
+    def predict(self, X, confidence=0.5, outlier_contam=None, *args, **kwargs):
         print(f"Predicting outcome of {X.shape[0]} samples...")
         # filter dials data
-        X = self.filter_outliers(X, contamination=outlier_contam)
+        contamination = self.default_contam if outlier_contam is None else outlier_contam
+        X = self.filter_outliers(X, contamination=contamination)
 
         # get predicted probabilities of success and filter for given confidence threshold
         y_proba = self.model.predict_proba(X, *args, **kwargs)[:, 1]
         y_pred = y_proba >= confidence
         return y_pred
 
-    def test(self, X_test, y_test, outlier_contam=0, scoring=None):
+    def test(self, X_test, y_test, confidence=0.5, outlier_contam=0, scoring=None):
         # filter X and y
-        X_test, y_test = self.filter_outliers(X_test, y_test, contamination=outlier_contam)
+        contamination = self.default_contam if outlier_contam is None else outlier_contam
+        X_test, y_test = self.filter_outliers(X_test, y_test, contamination=contamination)
 
         # predict given samples and get metric scores
-        y_pred = self.predict(X_test, outlier_contam=0)
+        y_pred = self.predict(X_test, confidence=confidence, outlier_contam=0)
         scoring = self.metrics if scoring is None else scoring
         score_dict = {metric: self.available_metrics_[metric](y_test, y_pred) for metric in scoring}
         return score_dict
@@ -120,8 +130,9 @@ class EPModel():
         info = (f"Experimental Phasing prediction model for {self.data_pipeline.upper()} data, with settings:\n"
                 f"> Predictor: {self.clf}\n"
                 f"> Scaler: {self.scaler}\n"
-                f"> Feature Selector: {self.feat_selector}\n"
-                f"> Outlier Removal: {self.outlier()}\n"
+                f"> Feature selector: {self.feat_selector}\n"
+                f"> Outlier removal: {self.outlier()}\n"
+                f"> Default contamination: {self.default_contam}\n"
                 f"> Model trained: {self.is_trained_}")
         return info
 
