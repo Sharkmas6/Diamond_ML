@@ -36,8 +36,9 @@ class EPModel():
                            "IsolationForest": IsolationForest,
                            "EllipticEnvelope": EllipticEnvelope}
 
-    def __init__(self, data_pipeline="dials", model_kind="MLP", feat_select_type="default", model_params={},
-                 feat_select_params={"k": 7}, metrics=["accuracy", "f1", "mcc", "precision", "recall"],
+    def __init__(self, data_pipeline="dials", model_kind="MLP", model_params={},
+                 feat_select_type="default", feat_select_params={"k": 7},
+                 metrics=["accuracy", "f1", "mcc", "precision", "recall"],
                  outlier_kind="LOF", default_contam=None):
         assert data_pipeline in self.pipeline_kinds_, "Model only available for DIALS and XDS (3DII)"
         assert model_kind in self.available_models_.keys(), f"Please select one of: {list(self.available_models_.keys())}"
