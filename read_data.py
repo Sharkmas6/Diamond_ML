@@ -128,7 +128,7 @@ for name, db_path in zip(names, db_paths):
     x["TOT_MOLWEIGHT"] = x["DATASET_id"].map(totweight)
 
     # add DATASET_NAME
-    cols = ["DATASET_NAME", "RESOLUTION_LOW", "RESOLUTION_HIGH"]
+    cols = ["DATASET_NAME", "RESOLUTION_LOW", "RESOLUTION_HIGH", "PDB_CODE"]
     for col in cols:
         x[col] = x["DATASET_id"].map(dataset_full[col])
     # fix unrestricted (None) datasets
