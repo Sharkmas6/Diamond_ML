@@ -36,7 +36,7 @@ class EPModel():
                            "IsolationForest": IsolationForest,
                            "EllipticEnvelope": EllipticEnvelope}
 
-    def __init__(self, data_pipeline="dials", model_kind="MLP", model_params={},
+    def __init__(self, data_pipeline="dials", classifier_kind="MLP", classifier_params={},
                  feat_select_type=None, feat_select_params={"k": 7},
                  metrics=("accuracy", "f1", "mcc", "precision", "recall"),
                  outlier_kind="LOF", default_contam=None,
@@ -45,8 +45,8 @@ class EPModel():
         Initialise EPModel with desired configurations
         :param data_pipeline: Either `dials`, `xds`, or `3dii`. Specifies which pipeline the data was processed with.
                               This changes the default contamination and features used. xds is an alias for 3dii.
-        :param model_kind: Either `MLP`, `RandomForest`, or `SVC`. Specifies which classifier to use.
-        :param model_params: Dictionary specifying the specific model parameters to customise `model_kind` with.
+        :param classifier_kind: Either `MLP`, `RandomForest`, or `SVC`. Specifies which classifier to use.
+        :param classifier_params: Dictionary specifying the specific model parameters to customise `classifier_kind` with.
         :param feat_select_type: If `kbest`, use SelectKBest feature selector, with parameters set by `feat_select_params`.
                                  Else use default, pre-selected set of features, depending on `data_pipeline`.
         :param feat_select_params: Dictionary specifying SelectKBest parameters. Main usage of specifying k.
@@ -64,10 +64,10 @@ class EPModel():
         '''
 
         assert data_pipeline in self.pipeline_kinds_, "Model only available for DIALS and XDS (3DII)"
-        assert model_kind in self.available_models_.keys(), f"Please select one of: {list(self.available_models_.keys())}"
+        assert classifier_kind in self.available_models_.keys(), f"Please select one of: {list(self.available_models_.keys())}"
 
         # store classifier and scaler, combine into pipeline
-        self.clf = self.available_models_[model_kind](**model_params)
+        self.clf = self.available_models_[classifier_kind](**classifier_params)
         self.scaler = StandardScaler()
         self.model = Pipeline([("scaler", self.scaler), ("clf", self.clf)])
         self.is_trained_ = False
