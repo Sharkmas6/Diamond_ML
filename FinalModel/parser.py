@@ -13,12 +13,12 @@ cmd_parser = argparse.ArgumentParser(prog="EP Model",
 # add model fitting option
 cmd_parser.add_argument("-fit", action="store", nargs=2, metavar=("X_TRAIN", "Y_TRAIN"),
                         help="Fit EP model on csv feature dataset found on X_TRAIN, using targets from Y_TRAIN,"
-                             "and store model on --model_loc.")
+                             "and store model on --model_loc or --output.")
 
 # add model predicting option
-cmd_parser.add_argument("-predict", action="store", nargs=1, metavar="X_TEST",
+cmd_parser.add_argument("-predict", action="store", nargs=1, metavar="X_PRED",
                         help="Use already fitted EP model to predict EP outcome "
-                             "using the features found on X_TEST, storing the result on --output.")
+                             "using the features found on X_PRED, storing the result on --output.")
 
 # add model testing option
 cmd_parser.add_argument("-test", action="store", nargs=2, metavar=("X_TEST", "Y_TEST"),
@@ -43,7 +43,7 @@ cmd_parser.add_argument("--model_loc", action="store", default=model_default_loc
                              f"Defaults to {model_default_loc}.")
 
 # add option to specify output location when testing/predicting/summarising
-test_out_default, predict_out_default, summary_out_default = "test.csv", "predictions.csv", None
+test_out_default, predict_out_default, summary_out_default = "test_results.csv", "predictions.csv", None
 cmd_parser.add_argument("--output", action="store", default="default",
                         help="Specify output location when fitting/testing/predicting/summarising. "
                              "None results in no storing. "
@@ -52,7 +52,7 @@ cmd_parser.add_argument("--output", action="store", default="default",
 
 
 
-## Add optional arguments
+## Add optional fitting arguments
 
 # add option to choose between dials and xds
 available_pipelines = ["dials", "xds", "3dii"]
@@ -60,8 +60,8 @@ cmd_parser.add_argument("--pipeline", action="store", choices=available_pipeline
                         help="Set whether data is from DIALS (default) or XDS (aka 3DII). Only used when fitting.")
 
 
-# add option to set location of model_params csv file
-cmd_parser.add_argument("--model_params", action="store", default="model_params.txt", metavar="FILENAME",
+# add option to set location of classifier_params csv file
+cmd_parser.add_argument("--classifier_params", action="store", default="classifier_params.txt", metavar="FILENAME",
                         help="Indicate location of text file indicating the model parameters to use, "
                              "for more complex models. Only used when fitting.")
 
@@ -105,14 +105,14 @@ def fit_store(dataloc, targetloc, modeloc):
 
     # try to fetch model params
     try:
-        params = read_csv(args.model_params, squeeze=True, header=None, delimiter=":", index_col=0, names=["Features"])
+        params = read_csv(args.classifier_params, squeeze=True, header=None, delimiter=":", index_col=0, names=["Features"])
         print("Custom model parameters found")
-        if "model_kind" in params.index:
+        if "classifier_kind" in params.index:
             # read model kind and parameters
-            model_kind = params["model_kind"]
-            params = params.drop("model_kind")
+            classifier_kind = params["classifier_kind"]
+            params = params.drop("classifier_kind")
         else:
-            model_kind = "MLP"  # use MLP as default
+            classifier_kind = "MLP"  # use MLP as default
 
         # convert parameters dtypes into float if possible
         for ix, param in params.items():
@@ -125,19 +125,19 @@ def fit_store(dataloc, targetloc, modeloc):
             else:
                 try:
                     params[ix] = float(param)
-                except TypeError:
+                except ValueError:
                     continue
 
-        print(f"Using {model_kind} model with:\n{params}\n")
+        print(f"Using {classifier_kind} model with:\n{params}\n")
         params = params.to_dict()
 
     except FileNotFoundError:
         # use defaults, very simple and overfitting models
         print("No custom model parameters found, using default parameters\n"
-              "Consider specifying the model parameters to be used, either through --model_params "
-              "or through adding a model_params.txt file in the same directory as this file\n")
+              "Consider specifying the model parameters to be used, either through --classifier_params "
+              "or through adding a classifier_params.txt file in the same directory as this file\n")
         params = {}
-        model_kind = "MLP"
+        classifier_kind = "MLP"
 
     # use SelectKBest if k > 0, use default feature set otherwise
     feat_select_type = "kbest" if args.kbest > 0 else "default"
@@ -165,7 +165,7 @@ def fit_store(dataloc, targetloc, modeloc):
     targets = read_csv(targetloc, index_col=0, squeeze=True)
 
     # create and fit EP Model
-    mdl = EPModel(data_pipeline=args.pipeline, model_kind=model_kind, model_params=params,
+    mdl = EPModel(data_pipeline=args.pipeline, classifier_kind=classifier_kind, classifier_params=params,
                   feat_select_type=feat_select_type, feat_select_params=feat_select_params,
                   outlier_kind=out_mdl, default_contam=def_contam)
     mdl.fit(df, targets)
