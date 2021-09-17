@@ -51,9 +51,11 @@ These steps are then all done automatically when calling the fit, predict, or te
 Using the Data class found in `read_data.py`, an example usage would look as such:
 
 ```
+import pandas as pd
 from read_data import data
 from compound_model import EPModel
 from sklearn.model_selection import train_test_split
+
 
 # fetch data
 db_kind = "dials"
@@ -70,7 +72,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, test_size=
 
 # prepare model params
 classifier_params = {"hidden_layer_sizes": (800, 400, 600),
-                "alpha": 0.001}
+                     "alpha": 0.001}
 
 # create EP Model
 ep = EPModel(data_pipeline=db_kind,
